@@ -8,9 +8,7 @@ venv/
 uploads/*
 !uploads/.gitkeep
 
-# Model (too large for GitHub)
-model/*.keras
-model/*.h5
+
 
 # Jupyter
 .ipynb_checkpoints/
