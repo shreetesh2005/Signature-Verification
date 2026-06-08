@@ -3,3 +3,6 @@ tensorflow
 numpy
 matplotlib
 Pillow
+fastapi
+uvicorn
+python-multipart
