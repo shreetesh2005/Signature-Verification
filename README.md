@@ -37,6 +37,7 @@ React Frontend  (/verify · /enroll · /manage)
         |
         | HTTP via axios, proxied to port 8000
         |
+        v
 FastAPI Backend
   GET  /                  health check
   GET  /customers         list enrolled customers
@@ -46,12 +47,14 @@ FastAPI Backend
   POST /customers/:id/replace   replace a specimen file
         |
         |
+        v
 sigverify Python package
   image_utils.py    load and preprocess images
   model_loader.py   build and load the Siamese model
   verifier.py       scoring and PASS/REVIEW/FAIL logic
         |
         |
+        v
 model/best_signature_model.keras
 ```
 
