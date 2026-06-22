@@ -53,3 +53,38 @@ export async function healthCheck() {
   const { data } = await client.get('/');
   return data; // { status: "ok", message: "..." }
 }
+/**
+ * POST /enroll — Enroll a new customer with multiple specimen files
+ * @param {string} customerId
+ * @param {FileList|File[]} specimenFiles
+ */
+export async function enrollCustomer(customerId, specimenFiles) {
+  const form = new FormData();
+  form.append('customer_id', customerId);
+  
+  // Append all selected specimens to the same key array matching FastAPI
+  for (let i = 0; i < specimenFiles.length; i++) {
+    form.append('specimens', specimenFiles[i]);
+  }
+
+  const { data } = await client.post('/enroll', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}
+/**
+ * POST /customers/:id/replace — Overwrite a specific signature specimen slot on disk
+ * @param {string} customerId
+ * @param {string} filename
+ * @param {File} newSpecimenFile
+ */
+export async function replaceSpecimen(customerId, filename, newSpecimenFile) {
+  const form = new FormData();
+  form.append('filename', filename);
+  form.append('new_specimen', newSpecimenFile);
+
+  const { data } = await client.post(`/customers/${customerId}/replace`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return data;
+}

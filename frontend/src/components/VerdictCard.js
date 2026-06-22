@@ -1,10 +1,4 @@
-import React, { useState } from 'react';
-
-const ICONS = {
-  MATCH:     { emoji: '✓', label: 'Signature Verified',      cls: 'match'    },
-  'NO MATCH':{ emoji: '✗', label: 'Signature Rejected',      cls: 'no-match' },
-  REVIEW:    { emoji: '⚠', label: 'Manual Review Required',  cls: 'review'   },
-};
+import React from 'react';
 
 function scoreColor(score) {
   if (score >= 0.7) return 'var(--green)';
@@ -12,125 +6,168 @@ function scoreColor(score) {
   return 'var(--red)';
 }
 
-export default function VerdictCard({ result, onReset }) {
-  const [expanded, setExpanded] = useState(false);
-  const meta = ICONS[result.decision] || ICONS['REVIEW'];
+export default function VerdictCard({ result }) {
+  let rawDecision = String(result.decision || '').trim().toUpperCase();
 
-  const scores = Object.entries(result.per_specimen_scores || {}).sort(
-    ([, a], [, b]) => b - a
-  );
+  // Force Pass Correction logic
+  if (result.average_score >= 0.70) {
+    rawDecision = 'MATCH';
+  }
+
+  let labelPrefix = rawDecision;
+  let cls = 'review';
+  let displayLabel = 'Manual Review Required';
+  let emoji = '⚠';
+
+  if (rawDecision === 'MATCH' || rawDecision === 'PASS') {
+    labelPrefix = 'PASS';
+    cls = 'match';                 
+    displayLabel = 'Signature Verified';
+    emoji = '✓';                   
+  } else if (rawDecision === 'NO MATCH' || rawDecision === 'FAIL') {
+    labelPrefix = 'FAIL';
+    cls = 'no-match';             
+    displayLabel = 'Signature Rejected';
+    emoji = '✗';                   
+  } else {
+    labelPrefix = 'REVIEW';
+    cls = 'review';                
+    displayLabel = 'Manual Review Required';
+    emoji = '⚠';
+  }
+
+  // STRICT CORRECTION GUARD: Only display the green success badges if the final layout 
+  // decision is a definitive PASS. Hide them completely for FAIL and REVIEW cases.
+  const shouldShowBadges = labelPrefix === 'PASS';
+
+  // --- DYNAMIC STATE BADGE RENDERER ---
+  // Formulates natural English explanations based on scores and flags
+  function renderConditionBadges() {
+    // 1. PASS STATE BADGES (Green theme)
+    if (labelPrefix === 'PASS') {
+      return (
+        <>
+          {result.case1_individual && (
+            <span style={{
+              background: 'rgba(34,197,94,0.12)', color: 'var(--green)',
+              border: '1px solid rgba(34,197,94,0.25)',
+              borderRadius: 6, padding: '5px 12px', fontSize: '12.5px', fontWeight: 600
+            }}>
+              ✓ Individual specimen match
+            </span>
+          )}
+          {result.case2_average && (
+            <span style={{
+              background: 'rgba(34,197,94,0.12)', color: 'var(--green)',
+              border: '1px solid rgba(34,197,94,0.25)',
+              borderRadius: 6, padding: '5px 12px', fontSize: '12.5px', fontWeight: 600
+            }}>
+              ✓ Average threshold met
+            </span>
+          )}
+        </>
+      );
+    }
+
+    // 2. FAIL STATE BADGES (Red theme)
+    if (labelPrefix === 'FAIL') {
+      return (
+        <>
+          <span style={{
+            background: 'rgba(239,68,68,0.12)', color: 'var(--red)',
+            border: '1px solid rgba(239,68,68,0.25)',
+            borderRadius: 6, padding: '5px 12px', fontSize: '12.5px', fontWeight: 600
+          }}>
+            ✗ Below average baseline
+          </span>
+          {result.max_score < result.threshold && (
+            <span style={{
+              background: 'rgba(239,68,68,0.12)', color: 'var(--red)',
+              border: '1px solid rgba(239,68,68,0.25)',
+              borderRadius: 6, padding: '5px 12px', fontSize: '12.5px', fontWeight: 600
+            }}>
+              ✗ Individual specimen mismatch
+            </span>
+          )}
+        </>
+      );
+    }
+
+    // 3. REVIEW STATE BADGES (Amber theme)
+    if (labelPrefix === 'REVIEW') {
+      const scoreVariance = result.max_score - result.min_score;
+      return (
+        <>
+          <span style={{
+            background: 'rgba(245,158,11,0.12)', color: 'var(--amber)',
+            border: '1px solid rgba(245,158,11,0.25)',
+            borderRadius: 6, padding: '5px 12px', fontSize: '12.5px', fontWeight: 600
+          }}>
+            ⚠ Near threshold boundary
+          </span>
+          {scoreVariance > 0.25 && (
+            <span style={{
+              background: 'rgba(245,158,11,0.12)', color: 'var(--amber)',
+              border: '1px solid rgba(245,158,11,0.25)',
+              borderRadius: 6, padding: '5px 12px', fontSize: '12.5px', fontWeight: 600
+            }}>
+              ⚠ High variant gap detected
+            </span>
+          )}
+        </>
+      );
+    }
+
+    return null;
+  }
 
   return (
-    <>
-      <div className={`verdict ${meta.cls}`}>
-        {/* Header */}
-        <div className="verdict-header">
-          <div className="verdict-icon">
-            <span style={{ fontSize: 18 }}>{meta.emoji}</span>
-          </div>
-          <div>
-            <div className="verdict-label">{result.decision}</div>
-            <div className="verdict-decision">{meta.label}</div>
-          </div>
+    <div className={`verdict ${cls}`} style={{ margin: 0, padding: '1.75rem' }}>
+      <div className="verdict-header" style={{ gap: '16px' }}>
+        <div className="verdict-icon" style={{ width: '46px', height: '46px', fontSize: '22px' }}>
+          <span>{emoji}</span>
         </div>
-
-        {/* Summary scores */}
-        <div className="score-grid">
-          <div className="score-tile">
-            <div className="score-tile-label">Average score</div>
-            <div className="score-tile-value" style={{ color: scoreColor(result.average_score) }}>
-              {(result.average_score * 100).toFixed(1)}%
-            </div>
+        <div>
+          <div className="verdict-label" style={{ 
+            fontSize: '18px',     
+            fontWeight: '900',    
+            letterSpacing: '0.08em', 
+            marginBottom: '4px' 
+          }}>
+            {labelPrefix}
           </div>
-          <div className="score-tile">
-            <div className="score-tile-label">Highest match</div>
-            <div className="score-tile-value" style={{ color: scoreColor(result.max_score) }}>
-              {(result.max_score * 100).toFixed(1)}%
-            </div>
-          </div>
-          <div className="score-tile">
-            <div className="score-tile-label">Lowest match</div>
-            <div className="score-tile-value" style={{ color: scoreColor(result.min_score) }}>
-              {(result.min_score * 100).toFixed(1)}%
-            </div>
-          </div>
-          <div className="score-tile">
-            <div className="score-tile-label">Threshold</div>
-            <div className="score-tile-value" style={{ color: 'var(--text-secondary)' }}>
-              {(result.threshold * 100).toFixed(1)}%
-            </div>
-          </div>
+          <div className="verdict-decision" style={{ fontSize: '22px' }}>{displayLabel}</div>
         </div>
-
-        {/* Case flags */}
-        {(result.case1_individual || result.case2_average) && (
-          <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {result.case1_individual && (
-              <span style={{
-                background: 'rgba(34,197,94,0.15)', color: 'var(--green)',
-                border: '1px solid rgba(34,197,94,0.25)',
-                borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 500
-              }}>
-                ✓ Individual specimen match
-              </span>
-            )}
-            {result.case2_average && (
-              <span style={{
-                background: 'rgba(34,197,94,0.15)', color: 'var(--green)',
-                border: '1px solid rgba(34,197,94,0.25)',
-                borderRadius: 6, padding: '3px 10px', fontSize: 12, fontWeight: 500
-              }}>
-                ✓ Average threshold met
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Per-specimen breakdown (collapsible) */}
-      {scores.length > 0 && (
-        <div className="card" style={{ marginBottom: '1.5rem' }}>
-          <button
-            className="btn btn-ghost"
-            style={{ width: '100%', justifyContent: 'space-between', marginBottom: expanded ? 12 : 0 }}
-            onClick={() => setExpanded(v => !v)}
-          >
-            <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
-              Per-specimen scores ({scores.length})
-            </span>
-            <svg
-              width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: '0.2s' }}
-            >
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </button>
+      {/* Narrative Summary Code Block - REMOVED */}
 
-          {expanded && (
-            <div className="specimen-list">
-              {scores.map(([name, score]) => (
-                <div className="specimen-row" key={name}>
-                  <span className="specimen-name" title={name}>{name}</span>
-                  <div className="score-bar-track">
-                    <div
-                      className="score-bar-fill"
-                      style={{ width: `${(score * 100).toFixed(1)}%`, background: scoreColor(score) }}
-                    />
-                  </div>
-                  <span className="score-num" style={{ color: scoreColor(score) }}>
-                    {(score * 100).toFixed(1)}%
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+      {/* Dynamic Condition Badges Section */}
+      <div style={{ marginTop: '1.25rem', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+        {renderConditionBadges()}
+      </div>
+
+      {/* Symmetric 3-Column Score Grid Layout */}
+      <div className="score-grid" style={{ marginTop: '1.5rem', gap: '12px', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))' }}>
+        <div className="score-tile" style={{ padding: '14px' }}>
+          <div className="score-tile-label" style={{ fontSize: '11.5px' }}>Average score</div>
+          <div className="score-tile-value" style={{ color: scoreColor(result.average_score), fontSize: '22px' }}>
+            {(result.average_score * 100).toFixed(1)}%
+          </div>
         </div>
-      )}
-
-      <button className="btn btn-ghost btn-full" onClick={onReset}>
-        ← Verify another signature
-      </button>
-    </>
+        <div className="score-tile" style={{ padding: '14px' }}>
+          <div className="score-tile-label" style={{ fontSize: '11.5px' }}>Highest match</div>
+          <div className="score-tile-value" style={{ color: scoreColor(result.max_score), fontSize: '22px' }}>
+            {(result.max_score * 100).toFixed(1)}%
+          </div>
+        </div>
+        <div className="score-tile" style={{ padding: '14px' }}>
+          <div className="score-tile-label" style={{ fontSize: '11.5px' }}>Lowest match</div>
+          <div className="score-tile-value" style={{ color: scoreColor(result.min_score), fontSize: '22px' }}>
+            {(result.min_score * 100).toFixed(1)}%
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

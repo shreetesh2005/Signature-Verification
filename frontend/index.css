@@ -286,7 +286,7 @@ html, body, #root {
 
 .dropzone-preview {
   width: 100%;
-  max-height: 120px; /* Shortened down from 180px for Page 1 */
+  max-height: 180px;
   object-fit: contain;
   border-radius: var(--radius-md);
   border: 1px solid var(--border);
@@ -546,36 +546,4 @@ html, body, #root {
 
 .empty-state-text {
   font-size: 14px;
-}
-/* --- PRINT MEDIA ENGINE OVERRIDES --- */
-@media print {
-  /* Hide standard interactive UI elements that don't belong in a static PDF document */
-  .nav, 
-  .no-print, 
-  .btn-ghost {
-    display: none !important;
-  }
-
-  /* Force the layout shell to expand completely without truncating containers */
-  body, 
-  .app-shell, 
-  .main-content {
-    background: #0b0f1a !important; /* Retain dark mode aesthetic canvas profile */
-    color: #e8eaf0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    max-width: 100% !important;
-  }
-
-  /* Prevent scroll tracking from hiding reference specimens in the print view */
-  div {
-    overflow: visible !important;
-    max-height: none !important;
-  }
-
-  /* Enforce exact device styling layout emulation */
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
 }

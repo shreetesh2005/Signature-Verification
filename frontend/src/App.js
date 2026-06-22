@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate } from 'react-router-dom';
 import { healthCheck } from './api/client';
 import VerifyPage    from './pages/VerifyPage';
-import CustomersPage from './pages/CustomersPage';
+import EnrollPage    from './pages/EnrollPage';
+import ManageCustomersPage from './pages/ManageCustomersPage'; // <-- Imported Management Portal
 
 function Nav({ apiOnline }) {
   return (
     <nav className="nav">
-      {/* Brand */}
       <NavLink to="/verify" className="nav-brand">
         <div className="nav-brand-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -18,23 +18,19 @@ function Nav({ apiOnline }) {
         SigVerify
       </NavLink>
 
-      {/* Tabs */}
+      {/* Expanded Multi-Tab View Layout Menu */}
       <div className="nav-tabs">
-        <NavLink
-          to="/verify"
-          className={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}
-        >
+        <NavLink to="/verify" className={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}>
           Verify
         </NavLink>
-        <NavLink
-          to="/customers"
-          className={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}
-        >
-          Customers
+        <NavLink to="/enroll" className={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}>
+          New Customer
+        </NavLink>
+        <NavLink to="/manage" className={({ isActive }) => `nav-tab${isActive ? ' active' : ''}`}>
+          Manage Directory
         </NavLink>
       </div>
 
-      {/* API status */}
       <div className="nav-status">
         <span className={`status-dot ${apiOnline === true ? 'online' : apiOnline === false ? 'offline' : ''}`} />
         {apiOnline === null ? 'Checking API…' : apiOnline ? 'API online' : 'API offline'}
@@ -47,15 +43,9 @@ export default function App() {
   const [apiOnline, setApiOnline] = useState(null);
 
   useEffect(() => {
-    healthCheck()
-      .then(() => setApiOnline(true))
-      .catch(() => setApiOnline(false));
-
-    // Re-check every 30 s
+    healthCheck().then(() => setApiOnline(true)).catch(() => setApiOnline(false));
     const id = setInterval(() => {
-      healthCheck()
-        .then(() => setApiOnline(true))
-        .catch(() => setApiOnline(false));
+      healthCheck().then(() => setApiOnline(true)).catch(() => setApiOnline(false));
     }, 30000);
     return () => clearInterval(id);
   }, []);
@@ -65,9 +55,10 @@ export default function App() {
       <div className="app-shell">
         <Nav apiOnline={apiOnline} />
         <Routes>
-          <Route path="/verify"    element={<VerifyPage />} />
-          <Route path="/customers" element={<CustomersPage />} />
-          <Route path="*"          element={<Navigate to="/verify" replace />} />
+          <Route path="/verify" element={<VerifyPage />} />
+          <Route path="/enroll" element={<EnrollPage />} />
+          <Route path="/manage" element={<ManageCustomersPage />} /> {/* <-- Connected path route wrapper */}
+          <Route path="*"      element={<Navigate to="/verify" replace />} />
         </Routes>
       </div>
     </BrowserRouter>
