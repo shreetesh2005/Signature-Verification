@@ -1,4 +1,4 @@
-# SigVerify — Signature Verification System
+# SigVerify — Automated Signature Verification System
 
 SigVerify is a full-stack offline signature verification system built on a Siamese neural network. It compares a submitted handwritten signature against a customer's enrolled reference specimens and returns a PASS, REVIEW, or FAIL decision. It is designed for banking and document authentication workflows where human review of borderline cases is part of the process.
 
